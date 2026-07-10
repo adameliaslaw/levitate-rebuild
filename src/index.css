@@ -1,0 +1,6 @@
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+* { font-family: Inter, system-ui, -apple-system, sans-serif; }
+body { @apply bg-[#FFFBF7] text-[#2B211D] antialiased; }
