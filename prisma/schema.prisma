@@ -1,0 +1,233 @@
+
+generator client {
+  provider = "prisma-client-js"
+}
+datasource db {
+  provider = "postgresql"
+  url = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+enum KeyFactType {
+  date
+  info
+}
+enum AutomationTrigger {
+  tag_added
+  renewal_due
+  birthday
+  no_contact
+  manual
+}
+enum SendStatus {
+  queued
+  sent
+  opened
+  replied
+  bounced
+  failed
+}
+enum IntegrationProvider {
+  vertafore_ams360
+  vertafore_qqcatalyst
+  redtail
+  wealthbox
+  gmail
+}
+model User {
+  id        String   @id
+  email     String   @unique
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  contacts     Contact[]
+  notes        Note[]
+  actionItems  ActionItem[] @relation("Assignee")
+  templates    Template[]
+  campaigns    Campaign[]
+  automations  Automation[]
+  integrations Integration[]
+}
+model Contact {
+  id             String   @id @default(cuid())
+  firstName      String
+  lastName       String
+  company        String?
+  email          String?
+  phone          String?
+  ownerId        String
+  owner          User     @relation(fields: [ownerId], references: [id])
+  lastContacted  DateTime?
+  keepInterval   Int      @default(30)
+  birthday       DateTime?
+  renewal        DateTime?
+  color          String?
+  connections    Int      @default(0)
+  happiness      Int      @default(5)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  keyFacts    KeyFact[]
+  notes       Note[]
+  actionItems ActionItem[]
+  tags        ContactTag[]
+  sends       Send[]
+  @@index([ownerId])
+  @@index([lastContacted])
+  @@index([renewal])
+  @@index([email])
+  @@index([company])
+  @@index([ownerId, lastContacted])
+}
+model Tag {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  color     String?
+  createdAt DateTime @default(now())
+  contacts  ContactTag[]
+}
+model ContactTag {
+  contactId String
+  tagId     String
+  contact   Contact @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  tag       Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  assignedAt DateTime @default(now())
+  @@id([contactId, tagId])
+  @@index([tagId])
+}
+model KeyFact {
+  id        String      @id @default(cuid())
+  contactId String
+  contact   Contact     @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  label     String
+  value     String
+  type      KeyFactType @default(info)
+  createdAt DateTime    @default(now())
+  @@index([contactId])
+}
+model Note {
+  id        String   @id @default(cuid())
+  contactId String
+  contact   Contact  @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  text      String   @db.Text
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id])
+  createdAt DateTime @default(now())
+  @@index([contactId])
+  @@index([authorId])
+}
+model ActionItem {
+  id         String   @id @default(cuid())
+  contactId  String
+  contact    Contact  @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  title      String
+  due        DateTime?
+  assigneeId String?
+  assignee   User?    @relation("Assignee", fields: [assigneeId], references: [id])
+  isPrivate  Boolean  @default(false)
+  completed  Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  @@index([contactId])
+  @@index([assigneeId])
+  @@index([due])
+}
+model Template {
+  id        String   @id @default(cuid())
+  ownerId   String?
+  owner     User?    @relation(fields: [ownerId], references: [id])
+  title     String
+  category  String
+  subject   String?
+  body      String?  @db.Text
+  social    String?  @db.Text
+  gradient  String?
+  icon      String?
+  createdAt DateTime @default(now())
+  campaigns Campaign[]
+  @@index([ownerId])
+  @@index([category])
+}
+model Campaign {
+  id            String   @id @default(cuid())
+  ownerId       String
+  owner         User     @relation(fields: [ownerId], references: [id])
+  templateId    String?
+  template      Template? @relation(fields: [templateId], references: [id])
+  name          String?
+  recipientsTag String?
+  subject       String?
+  body          String?  @db.Text
+  status        String   @default("draft")
+  scheduledAt   DateTime?
+  sentAt        DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  sends Send[]
+  @@index([ownerId])
+  @@index([status])
+}
+model Send {
+  id             String     @id @default(cuid())
+  campaignId     String?
+  campaign       Campaign?  @relation(fields: [campaignId], references: [id])
+  contactId      String
+  contact        Contact    @relation(fields: [contactId], references: [id])
+  status         SendStatus @default(queued)
+  gmailThreadId  String?
+  gmailMessageId String?
+  openedAt       DateTime?
+  repliedAt      DateTime?
+  createdAt      DateTime   @default(now())
+  @@index([campaignId])
+  @@index([contactId])
+  @@index([status])
+}
+model Automation {
+  id            String             @id @default(cuid())
+  ownerId       String
+  owner         User               @relation(fields: [ownerId], references: [id])
+  name          String
+  trigger       AutomationTrigger
+  triggerDetail String?
+  active        Boolean            @default(true)
+  enrolledCount Int                @default(0)
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+  steps       AutomationStep[]
+  enrollments Enrollment[]
+  @@index([ownerId])
+  @@index([active])
+}
+model AutomationStep {
+  id           String     @id @default(cuid())
+  automationId String
+  automation   Automation @relation(fields: [automationId], references: [id], onDelete: Cascade)
+  order        Int
+  type         String
+  label        String
+  delay        String?
+  templateId   String?
+  @@index([automationId])
+}
+model Enrollment {
+  id           String     @id @default(cuid())
+  automationId String
+  automation   Automation @relation(fields: [automationId], references: [id], onDelete: Cascade)
+  contactId    String
+  currentStep  Int        @default(0)
+  status       String     @default("active")
+  createdAt    DateTime   @default(now())
+  @@index([automationId])
+  @@index([contactId])
+}
+model Integration {
+  id         String              @id @default(cuid())
+  ownerId    String
+  owner      User                @relation(fields: [ownerId], references: [id])
+  provider   IntegrationProvider
+  status     String              @default("disconnected")
+  lastSyncAt DateTime?
+  config     Json?
+  createdAt  DateTime            @default(now())
+  updatedAt  DateTime            @updatedAt
+  @@unique([ownerId, provider])
+  @@index([provider])
+}
