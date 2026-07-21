@@ -5,27 +5,38 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview",
-    "lint": "eslint ."
+    "dev:server": "tsx watch server/index.ts",
+    "build": "vite build && tsc -p tsconfig.server.json",
+    "start": "node dist-server/server/index.js",
+    "lint": "eslint .",
+    "db:status": "prisma migrate status",
+    "db:generate": "prisma generate"
   },
   "dependencies": {
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "lucide-react": "^0.400.0",
-    "@prisma/client": "^5.14.0",
+    "@clerk/clerk-react": "^5.2.0",
     "@neondatabase/serverless": "^0.9.3",
-    "@clerk/clerk-react": "^5.2.0"
+    "@prisma/adapter-pg": "^7.9.0",
+    "@prisma/client": "^7.9.0",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "lucide-react": "^0.400.0",
+    "pg": "^8.22.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
   },
   "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.1",
     "autoprefixer": "^10.4.19",
     "postcss": "^8.4.39",
+    "prisma": "^7.9.0",
     "tailwindcss": "^3.4.6",
+    "tsx": "^4.23.1",
     "typescript": "^5.5.3",
-    "vite": "^5.4.2",
-    "prisma": "^5.14.0"
+    "vite": "^8.1.5"
   }
 }
