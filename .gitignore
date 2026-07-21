@@ -1,6 +1,3 @@
-﻿node_modules/
-dist/
-dist-server/
-.env
-.env.*
-!.env.example
+node_modules/
+ dist/
+ .env
